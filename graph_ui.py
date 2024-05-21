@@ -1,16 +1,49 @@
 import tkinter as tk
 import requests
 
+BASE_URL = "http://localhost:8000"
+
+MAX_ROWS = 10
+MAX_COLUMNS = 10
+MIN_ROWS = 2
+MIN_COLUMNS = 2
+
 def get_graph():
     graph = []
-    for i in range(4):
-        row = []
-        for j in range(4):
-            row.append(int(entries[i][j].get()))
-        graph.append(row)
+    for row in graph_entries:
+        row_values = [int(entry.get()) for entry in row]
+        graph.append(row_values)
     return graph
 
-BASE_URL = "http://localhost:8000"  
+def add_row():
+    global graph_entries
+    if len(graph_entries) < MAX_ROWS:
+        row = [tk.Entry(entries_frame, width=3) for _ in range(len(graph_entries[0]))]
+        for i, entry in enumerate(row):
+            entry.grid(row=len(graph_entries), column=i)
+        graph_entries.append(row)
+
+def add_column():
+    global graph_entries
+    if len(graph_entries[0]) < MAX_COLUMNS:
+        for row in graph_entries:
+            entry = tk.Entry(entries_frame, width=3)
+            entry.grid(row=row[0].grid_info()['row'], column=len(row))
+            row.append(entry)
+
+def remove_row():
+    global graph_entries
+    if len(graph_entries) > MIN_ROWS:
+        row_to_remove = graph_entries.pop()
+        for entry in row_to_remove:
+            entry.grid_forget()
+
+def remove_column():
+    global graph_entries
+    if len(graph_entries[0]) > MIN_COLUMNS:
+        for row in graph_entries:
+            row[-1].grid_forget()
+            row.pop()
 
 def submit_graph():
     global graph
@@ -19,44 +52,46 @@ def submit_graph():
     result = response.json()
     display_result(result)
 
-
 def display_result(result):
-    # Создайте новое окно или виджет для вывода результата
     result_window = tk.Toplevel(root)
     result_window.title("Shortest Paths")
 
-    # Выведите результат в новом окне
     for i in range(len(result)):
         for j in range(len(result[i])):
             if i != j:
                 path_label = tk.Label(result_window, text=f"Shortest path from {i+1} to {j+1}: {result[i][j]}")
                 path_label.pack()
 
-
-
 root = tk.Tk()
-root.title("Graph Input")
+root.title("Graph UI")
+root.resizable(False, False)
 
-# Создаем сетку для ввода графа
-entries = []
-for i in range(4):
-    row = []
-    for j in range(4):
-        entry = tk.Entry(root, width=10)
+# Create frames
+button_frame = tk.Frame(root)
+button_frame.grid(row=0, column=0, columnspan=5)
+
+entries_frame = tk.Frame(root)
+entries_frame.grid(row=1, column=0, columnspan=2)
+
+# Create initial 2x2 matrix
+graph_entries = [[tk.Entry(entries_frame, width=3) for _ in range(2)] for _ in range(2)]
+for i, row in enumerate(graph_entries):
+    for j, entry in enumerate(row):
         entry.grid(row=i, column=j)
-        row.append(entry)
-    entries.append(row)
 
-# Заполняем изначальный граф
-for i in range(4):
-    for j in range(4):
-        if i == j:
-            entries[i][j].insert(0, "0")
-        else:
-            entries[i][j].insert(0, "1000000")
+add_row_button = tk.Button(button_frame, text="Add Row", command=add_row)
+add_row_button.grid(row=0, column=0)
 
-# Добавляем кнопку для отправки графа
-submit_button = tk.Button(root, text="Submit Graph", command=submit_graph)
-submit_button.grid(row=4, column=0, columnspan=4)
+add_col_button = tk.Button(button_frame, text="Add Column", command=add_column)
+add_col_button.grid(row=0, column=1)
+
+remove_row_button = tk.Button(button_frame, text="Remove Row", command=remove_row)
+remove_row_button.grid(row=0, column=2)
+
+remove_col_button = tk.Button(button_frame, text="Remove Column", command=remove_column)
+remove_col_button.grid(row=0, column=3)
+
+submit_button = tk.Button(button_frame, text="Submit Graph", command=submit_graph)
+submit_button.grid(row=0, column=4)
 
 root.mainloop()
