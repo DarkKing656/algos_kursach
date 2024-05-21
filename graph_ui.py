@@ -1,5 +1,6 @@
 import tkinter as tk
 import requests
+from datetime import datetime
 
 BASE_URL = "http://localhost:8000"
 
@@ -50,7 +51,17 @@ def submit_graph():
     graph = get_graph()
     response = requests.post(f"{BASE_URL}/shortest_paths", json=graph)
     result = response.json()
+    save_result_to_file(result)
     display_result(result)
+
+def save_result_to_file(result):
+    now = datetime.now()
+    file_name = f"cache_files/result_{now.strftime('%Y-%m-%d_%H-%M-%S')}.txt"
+    with open(file_name, "w") as f:
+        for i in range(len(result)):
+            for j in range(len(result[i])):
+                if i != j:
+                    f.write(f"Shortest path from {i+1} to {j+1}: {result[i][j]}\n")
 
 def display_result(result):
     result_window = tk.Toplevel(root)
